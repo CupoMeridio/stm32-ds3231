@@ -65,7 +65,7 @@ typedef enum DS3231_InterruptMode{
 ```c
 void DS3231_SetRateSelect(DS3231_Rate rate);
 ```
-* Options: 1 Hz, 1.024 kHz, 4.096 kHz or 8.912 kHz.
+* Options: 1 Hz, 1.024 kHz, 4.096 kHz or 8.192 kHz.
 ```c
 typedef enum DS3231_Rate{
 	DS3231_1HZ, DS3231_1024HZ, DS3231_4096HZ, DS3231_8192HZ
