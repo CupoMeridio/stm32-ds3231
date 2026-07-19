@@ -1,4 +1,3 @@
-
 /* An STM32 HAL library written for the DS3231 real-time clock IC. */
 /* Library by @eepj www.github.com/eepj */
 #include "ds3231_for_stm32_hal.h"
@@ -28,6 +27,9 @@ void DS3231_Init(I2C_HandleTypeDef *hi2c) {
  * @param val Value to set, 0 to 255.
  */
 void DS3231_SetRegByte(uint8_t regAddr, uint8_t val) {
+	if (!_ds3231_ui2c) {
+		return;
+	}
 	uint8_t bytes[2] = { regAddr, val };
 	HAL_I2C_Master_Transmit(_ds3231_ui2c, DS3231_I2C_ADDR << 1, bytes, 2, DS3231_TIMEOUT);
 }
@@ -38,7 +40,10 @@ void DS3231_SetRegByte(uint8_t regAddr, uint8_t val) {
  * @return Value stored in the register, 0 to 255.
  */
 uint8_t DS3231_GetRegByte(uint8_t regAddr) {
-	uint8_t val;
+	if (!_ds3231_ui2c) {
+		return 0;
+	}
+	uint8_t val = 0;
 	HAL_I2C_Master_Transmit(_ds3231_ui2c, DS3231_I2C_ADDR << 1, &regAddr, 1, DS3231_TIMEOUT);
 	HAL_I2C_Master_Receive(_ds3231_ui2c, DS3231_I2C_ADDR << 1, &val, 1, DS3231_TIMEOUT);
 	return val;
@@ -104,7 +109,7 @@ void DS3231_ClearAlarm2Flag(){
  */
 void DS3231_SetAlarm2Minute(uint8_t minute){
 	uint8_t temp = DS3231_GetRegByte(DS3231_A2_MINUTE) & 0x80;
-	uint8_t a2m2 = temp | (DS3231_EncodeBCD(minute) & 0x3f);
+	uint8_t a2m2 = temp | (DS3231_EncodeBCD(minute) & 0x7f);
 	DS3231_SetRegByte(DS3231_A2_MINUTE, a2m2);
 }
 
@@ -144,11 +149,11 @@ void DS3231_SetAlarm2Day(uint8_t day){
  */
 void DS3231_SetAlarm2Mode(DS3231_Alarm2Mode alarmMode){
 	uint8_t temp;
-	temp = DS3231_GetRegByte(DS3231_A1_MINUTE) & 0x7f;
+	temp = DS3231_GetRegByte(DS3231_A2_MINUTE) & 0x7f;
 	DS3231_SetRegByte(DS3231_A2_MINUTE, temp | (((alarmMode >> 0) & 0x01) << DS3231_AXMY));
-	temp = DS3231_GetRegByte(DS3231_A1_HOUR) & 0x7f;
+	temp = DS3231_GetRegByte(DS3231_A2_HOUR) & 0x7f;
 	DS3231_SetRegByte(DS3231_A2_HOUR, temp | (((alarmMode >> 1) & 0x01) << DS3231_AXMY));
-	temp = DS3231_GetRegByte(DS3231_A1_DATE) & 0x7f;
+	temp = DS3231_GetRegByte(DS3231_A2_DATE) & 0x7f;
 	DS3231_SetRegByte(DS3231_A2_DATE, temp | (((alarmMode >> 2) & 0x01) << DS3231_AXMY) | (alarmMode & 0x80));
 }
 
@@ -176,7 +181,7 @@ void DS3231_ClearAlarm1Flag(){
  */
 void DS3231_SetAlarm1Second(uint8_t second){
 	uint8_t temp = DS3231_GetRegByte(DS3231_A1_SECOND) & 0x80;
-	uint8_t a1m1 = temp | (DS3231_EncodeBCD(second) & 0x3f);
+	uint8_t a1m1 = temp | (DS3231_EncodeBCD(second) & 0x7f);
 	DS3231_SetRegByte(DS3231_A1_SECOND, a1m1);
 }
 
@@ -186,7 +191,7 @@ void DS3231_SetAlarm1Second(uint8_t second){
  */
 void DS3231_SetAlarm1Minute(uint8_t minute){
 	uint8_t temp = DS3231_GetRegByte(DS3231_A1_MINUTE) & 0x80;
-	uint8_t a1m2 = temp | (DS3231_EncodeBCD(minute) & 0x3f);
+	uint8_t a1m2 = temp | (DS3231_EncodeBCD(minute) & 0x7f);
 	DS3231_SetRegByte(DS3231_A1_MINUTE, a1m2);
 }
 
@@ -435,7 +440,7 @@ uint8_t DS3231_EncodeBCD(uint8_t dec) {
  * @param enable Enable, DS3231_ENABLE or DS3231_DISABLE.
  */
 void DS3231_Enable32kHzOutput(DS3231_State enable){
-	uint8_t status = DS3231_GetRegByte(DS3231_REG_STATUS) & 0xfb;
+	uint8_t status = DS3231_GetRegByte(DS3231_REG_STATUS) & 0xf7;
 	DS3231_SetRegByte(DS3231_REG_STATUS, status | (enable << DS3231_EN32KHZ));
 }
 
